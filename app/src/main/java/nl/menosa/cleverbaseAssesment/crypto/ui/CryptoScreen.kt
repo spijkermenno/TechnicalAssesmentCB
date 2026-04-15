@@ -32,8 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -43,19 +41,81 @@ import nl.menosa.cleverbaseAssesment.friendlist.SaveResult
 
 @Composable
 fun CryptoScreen(modifier: Modifier = Modifier, viewModel: CryptoViewModel = viewModel()) {
-    Column(modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        IdentityCard(
-            publicKey = viewModel.personalPublicKey
+    var showQrScanner by remember { mutableStateOf(false) }
+    var showDecryptResult by remember { mutableStateOf(false) }
+    var sendToFriend by remember { mutableStateOf<Friend?>(null) }
+    var showEncryptedPayloadActions by remember { mutableStateOf(false) }
+
+    Box(modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            viewModel.generateKeys()
+            IdentityCard(
+                publicKey = viewModel.personalPublicKey,
+                onGenerateClick = { viewModel.generateKeys() },
+                openQRScanner = { showQrScanner = true }
+            )
+
+            FriendsList(
+                modifier = Modifier.fillMaxWidth(),
+                friends = viewModel.friends,
+                onAddFriend = viewModel::addFriend,
+                onSendMessage = { sendToFriend = it },
+                onRemoveFriend = { viewModel.removeFriend(it.id) }
+            )
         }
 
-        FriendsList(
-            modifier = Modifier.fillMaxWidth(),
-            friends = viewModel.friends,
-            onAddFriend = viewModel::addFriend,
-            onSendMessage = { },
-            onRemoveFriend = { viewModel.removeFriend(it.id) }
+        if (showQrScanner) {
+            QrScannerOverlay(
+                onDismiss = { showQrScanner = false },
+                onQrDecoded = { raw ->
+                    viewModel.decrypt(raw)
+                    showQrScanner = false
+                    showDecryptResult = true
+                }
+            )
+        }
+    }
+
+    sendToFriend?.let { friend ->
+        SendMessageDialog(
+            friend = friend,
+            onDismiss = { sendToFriend = null },
+            onSubmit = { message ->
+                val ok = viewModel.encrypt(friend.publicKeyBase64, message)
+                if (ok) {
+                    showEncryptedPayloadActions = true
+                }
+                ok
+            }
+        )
+    }
+
+    if (showDecryptResult) {
+        AlertDialog(
+            onDismissRequest = { showDecryptResult = false },
+            title = { Text("Decrypted message") },
+            text = {
+                Text(
+                    viewModel.decryptedText,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showDecryptResult = false }) {
+                    Text("OK")
+                }
+            }
+        )
+    }
+
+    if (showEncryptedPayloadActions) {
+        EncryptedPayloadActionsDialog(
+            encryptedText = viewModel.encryptedText,
+            onDismiss = { showEncryptedPayloadActions = false }
         )
     }
 }
@@ -232,20 +292,7 @@ fun FriendCard(
             ) {
                 val swipeHintColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f)
                 Box(Modifier.fillMaxWidth()) {
-                    Box(
-                        Modifier
-                            .matchParentSize()
-                            .background(
-                                Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.Transparent,
-                                        swipeHintColor,
-                                    ),
-                                    startX = 0f,
-                                    endX = Float.POSITIVE_INFINITY,
-                                )
-                            )
-                    )
+
                     Row(
                         Modifier
                             .padding(horizontal = 12.dp, vertical = 8.dp)

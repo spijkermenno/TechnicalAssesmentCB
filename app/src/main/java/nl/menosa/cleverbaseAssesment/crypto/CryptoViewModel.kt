@@ -28,16 +28,22 @@ class CryptoViewModel(
         refreshPublicKey()
     }
 
-    fun encrypt(key: String, message: String) {
-        encryptedText =
-            cryptoManager.encryptWithOtherPublicKey(key, message)
-                ?: "Something went wrong while encrypting..."
+    /** @return true if ciphertext was produced, false on failure */
+    fun encrypt(key: String, message: String): Boolean {
+        val result = cryptoManager.encryptWithOtherPublicKey(key, message)
+        return if (result != null) {
+            encryptedText = result
+            true
+        } else {
+            encryptedText = ""
+            false
+        }
     }
 
     fun decrypt(encodedText: String) {
+        val trimmed = encodedText.trim()
         decryptedText =
-            cryptoManager.decrypt(encodedText) ?: "Something went wrong while decrypting..."
-
+            cryptoManager.decrypt(trimmed) ?: "Something went wrong while decrypting..."
     }
 
     private fun refreshPublicKey() {

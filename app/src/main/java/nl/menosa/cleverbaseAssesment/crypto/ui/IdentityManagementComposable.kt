@@ -17,10 +17,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,7 +34,15 @@ fun IdentityCard(
     onGenerateClick: () -> Unit,
     openQRScanner: () -> Unit
 ) {
-    val clipboardManager = LocalClipboardManager.current
+    var showPublicKeyActions by remember { mutableStateOf(false) }
+
+    val keyForDialog = publicKey
+    if (showPublicKeyActions && !keyForDialog.isNullOrEmpty()) {
+        PublicKeyActionsDialog(
+            publicKey = keyForDialog,
+            onDismiss = { showPublicKeyActions = false }
+        )
+    }
 
     Card(modifier = modifier.fillMaxWidth()) {
         Column(
@@ -82,14 +92,13 @@ fun IdentityCard(
                     }
                 }
 
-                Button(onClick = {
-                    if (!publicKey.isNullOrEmpty()) {
-                        clipboardManager.setText(AnnotatedString(publicKey))
-                    }
-                }, enabled = !publicKey.isNullOrEmpty()) {
+                Button(
+                    onClick = { showPublicKeyActions = true },
+                    enabled = !publicKey.isNullOrEmpty()
+                ) {
                     Icon(
                         Icons.Rounded.Share,
-                        contentDescription = "Copy key"
+                        contentDescription = "Copy, share, or show QR"
                     )
                 }
             }
