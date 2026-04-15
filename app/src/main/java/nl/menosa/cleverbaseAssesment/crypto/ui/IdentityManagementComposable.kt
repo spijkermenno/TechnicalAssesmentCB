@@ -1,0 +1,113 @@
+package nl.menosa.cleverbaseAssesment.crypto.ui
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Share
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+
+@Composable
+fun IdentityCard(
+    modifier: Modifier = Modifier,
+    publicKey: String?,
+    onGenerateClick: () -> Unit
+) {
+    val clipboardManager = LocalClipboardManager.current
+
+    Card(modifier = modifier.fillMaxWidth()) {
+        Column(
+            Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+        ) {
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+
+                Text("Personal Public Key")
+
+                if (publicKey == null) {
+                    Button({ onGenerateClick() }) {
+                        Icon(
+                            Icons.Rounded.Add,
+                            contentDescription = "Add button"
+                        )
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SelectionContainer(
+                    Modifier
+                        .background(Color.LightGray, RoundedCornerShape(10.dp))
+                        .padding(8.dp)
+                        .fillMaxWidth(0.7f)
+                ) {
+                    if (publicKey.isNullOrEmpty()) {
+                        Text("No key available")
+                    } else {
+                        Text(publicKey, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    }
+                }
+
+                Button(onClick = {
+                    if (!publicKey.isNullOrEmpty()) {
+                        clipboardManager.setText(AnnotatedString(publicKey))
+                    }
+                }, enabled = !publicKey.isNullOrEmpty()) {
+                    Icon(
+                        Icons.Rounded.Share,
+                        contentDescription = "Copy key"
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview
+@Composable
+private fun IdentityManagementPreview() {
+    Column {
+        IdentityCard(
+            modifier = Modifier.padding(8.dp),
+            publicKey = "TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY",
+            onGenerateClick = {}
+        )
+
+        IdentityCard(
+            modifier = Modifier.padding(8.dp),
+            publicKey = "",
+            onGenerateClick = {}
+        )
+
+        IdentityCard(
+            modifier = Modifier.padding(8.dp),
+            publicKey = null,
+            onGenerateClick = {}
+        )
+    }
+}

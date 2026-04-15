@@ -16,13 +16,13 @@ class CryptoManager {
         KeyStore.getInstance(KEYSTORE_IDENTIFIER).apply { load(null) }
 
     // Key generation
-    fun generateKeyPairsIfNeeded() {
-        if (!keystore.containsAlias(KEYGEN_ALIAS)) {
-            generateKeyPairs()
+    fun generateKeyPairsIfNeeded(alias: String = KEYGEN_ALIAS) {
+        if (!keystore.containsAlias(alias)) {
+            generateKeyPairs(alias)
         }
     }
 
-    private fun generateKeyPairs() {
+    private fun generateKeyPairs(alias: String) {
         // Get key pair generator for algorithm RSA, for AndroidKeyStore.
         val keyPairGenerator =
             KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_RSA, KEYSTORE_IDENTIFIER)
@@ -34,7 +34,7 @@ class CryptoManager {
         val keyGenParameterSpec =
             KeyGenParameterSpec
                 .Builder(
-                    KEYGEN_ALIAS,
+                    alias,
                     KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT or KeyProperties.PURPOSE_SIGN
                 )
                 .setKeySize(KEY_SIZE)
@@ -47,17 +47,27 @@ class CryptoManager {
 
     }
 
-    fun getPublicKey(): ByteArray? = keystore.getCertificate(KEYGEN_ALIAS)?.publicKey?.encoded
+    fun getPublicKey(alias: String = KEYGEN_ALIAS): ByteArray? =
+        keystore.getCertificate(alias)?.publicKey?.encoded
 
-    fun getPublicKeyBase64(): String? = getPublicKey()?.toBase64()
+    fun getPublicKeyBase64(alias: String = KEYGEN_ALIAS): String? = getPublicKey(alias)?.toBase64()
 
     // Cryptography
-    fun encrypt(text: String): String? {
+    fun encryptWithPersonalKey(text: String): String? {
+        val publicKeyBytes = getPublicKey() ?: return null
+        return encrypt(publicKeyBytes, text)
+    }
+
+    fun encryptWithOtherPublicKey(publicKeyBase64: String?, text: String): String? {
+        val publicKeyBytes = publicKeyBase64 ?: return null
+        return encrypt(publicKeyBytes.decodeBase64(), text)
+    }
+
+    private fun encrypt(key: ByteArray, text: String): String? {
         /**
          * transform the publicKeyBytesArray to a x509 public key.
          */
-        val publicKeyBytes = getPublicKey() ?: return null
-        val x509keySpec = X509EncodedKeySpec(publicKeyBytes)
+        val x509keySpec = X509EncodedKeySpec(key)
         val keyFactory = KeyFactory.getInstance(KeyProperties.KEY_ALGORITHM_RSA)
         val publicKey = keyFactory.generatePublic(x509keySpec)
 
@@ -72,9 +82,9 @@ class CryptoManager {
         }
     }
 
-    fun decrypt(base64text: String): String? {
+    fun decrypt(base64text: String, alias: String = KEYGEN_ALIAS): String? {
         try {
-            val privateKey: PrivateKey = keystore.getKey(KEYGEN_ALIAS, null) as PrivateKey
+            val privateKey: PrivateKey = keystore.getKey(alias, null) as PrivateKey
             val cipher: Cipher = Cipher.getInstance(ENCRYPTION_TRANSFORMATION)
             cipher.init(Cipher.DECRYPT_MODE, privateKey)
 
@@ -85,6 +95,10 @@ class CryptoManager {
         }
     }
 
+    // Helper methods
+    private fun ByteArray.toBase64() = Base64.getEncoder().encodeToString(this)
+    private fun String.decodeBase64() = Base64.getDecoder().decode(this)
+
     companion object {
         const val KEYSTORE_IDENTIFIER = "AndroidKeyStore"
         const val KEYGEN_ALIAS = "CleverBaseAssesment"
@@ -93,8 +107,4 @@ class CryptoManager {
         private const val ENCRYPTION_TRANSFORMATION = "RSA/ECB/PKCS1Padding"
         private const val KEY_SIZE = 2048
     }
-
-    // Helper methods
-    private fun ByteArray.toBase64() = Base64.getEncoder().encodeToString(this)
-    private fun String.decodeBase64() = Base64.getDecoder().decode(this)
 }
