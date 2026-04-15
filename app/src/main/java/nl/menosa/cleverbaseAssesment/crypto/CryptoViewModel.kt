@@ -18,10 +18,9 @@ class CryptoViewModel(
     var encryptedText by mutableStateOf("")
     var decryptedText by mutableStateOf("")
 
-    var saveErrorMessage by mutableStateOf<String?>(null)
-
     init {
         refreshPublicKey()
+        refreshFriends()
     }
 
     fun generateKeys() {
@@ -45,14 +44,12 @@ class CryptoViewModel(
         personalPublicKey = cryptoManager.getPublicKeyBase64()
     }
 
-    fun addFriend(nickname: String, publicKeyBase64: String) {
+    fun addFriend(nickname: String, publicKeyBase64: String): SaveResult {
         val result = friendListRepository.saveFriend(nickname, publicKeyBase64)
-
-        if (result is SaveResult.Error) {
-            saveErrorMessage = result.message
-        } else {
+        if (result is SaveResult.Success) {
             refreshFriends()
         }
+        return result
     }
 
     fun removeFriend(friendId: String) {

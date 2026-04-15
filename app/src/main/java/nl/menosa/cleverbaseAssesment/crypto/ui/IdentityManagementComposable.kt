@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Share
 import androidx.compose.material3.Button
@@ -28,7 +29,8 @@ import androidx.compose.ui.unit.dp
 fun IdentityCard(
     modifier: Modifier = Modifier,
     publicKey: String?,
-    onGenerateClick: () -> Unit
+    onGenerateClick: () -> Unit,
+    openQRScanner: () -> Unit
 ) {
     val clipboardManager = LocalClipboardManager.current
 
@@ -51,6 +53,13 @@ fun IdentityCard(
                         Icon(
                             Icons.Rounded.Add,
                             contentDescription = "Add button"
+                        )
+                    }
+                } else {
+                    Button({ openQRScanner() }) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = "Scan a QR message"
                         )
                     }
                 }
@@ -95,19 +104,22 @@ private fun IdentityManagementPreview() {
         IdentityCard(
             modifier = Modifier.padding(8.dp),
             publicKey = "TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY TEST PUBLIC KEY",
-            onGenerateClick = {}
+            onGenerateClick = {},
+            openQRScanner = {}
         )
 
         IdentityCard(
             modifier = Modifier.padding(8.dp),
             publicKey = "",
-            onGenerateClick = {}
+            onGenerateClick = {},
+            openQRScanner = {}
         )
 
         IdentityCard(
             modifier = Modifier.padding(8.dp),
             publicKey = null,
-            onGenerateClick = {}
+            onGenerateClick = {},
+            openQRScanner = {}
         )
     }
 }
